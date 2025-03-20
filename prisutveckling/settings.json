@@ -1,0 +1,13 @@
+
+{
+    "Sweden": {
+        "fetchProductUrl": "https://www.pricerunner.se/se/api/search-compare-gateway/public/search/suggest/SE?q=",
+        "fetchHistoryUrlP1": "https://www.pricerunner.se/se/api/search-compare-gateway/public/pricehistory/product/",
+        "fetchHistoryUrlP2": "/SE/DAY?merchantId=&selectedInterval=INFINITE_DAYS&filter=NATIONAL"
+    },
+    "United Kingdom": {
+        "fetchProductUrl": "https://www.pricerunner.com/uk/api/search-compare-gateway/public/search/suggest/UK?q=",
+        "fetchHistoryUrlP1": "https://www.pricerunner.com/uk/api/search-compare-gateway/public/pricehistory/product/",
+        "fetchHistoryUrlP2": "/UK/DAY?merchantId=&selectedInterval=INFINITE_DAYS&filter=NATIONAL"
+    }
+} 

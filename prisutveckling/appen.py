@@ -6,19 +6,35 @@ from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 import numpy as np
 import matplotlib.pyplot as plt
+import os
 
 app = Flask(__name__)
 
+Country = 'Sweden'
+
+#reading the settings.json file
+settings = {}
+settings_path = os.path.join(os.path.dirname(__file__), 'settings.json')
+try:
+    with open(settings_path, 'r') as f:
+        settings = json.load(f)
+except FileNotFoundError:
+    print(f"Error: settings.json not found at {settings_path}")
+    exit(1)
+
 # Search function to fetch product data
 def fetchProduct(search_query):
-    url = f'https://www.pricerunner.se/se/api/search-compare-gateway/public/search/suggest/SE?q={search_query}'
+    url = f'{settings[Country]['fetchProductUrl']}{search_query}'
+    #url = f'https://www.pricerunner.se/se/api/search-compare-gateway/public/search/suggest/SE?q={search_query}'
     response = requests.get(url).content
     data = json.loads(response)
     return data
 
 # Function to fetch product price history
 def fetchPriceHistory(product_id):
-    url = f'https://www.pricerunner.se/se/api/search-compare-gateway/public/pricehistory/product/{product_id}/SE/DAY?merchantId=&selectedInterval=INFINITE_DAYS&filter=NATIONAL'
+    url = f'{settings[Country]['fetchHistoryUrlP1']}{product_id}{settings[Country]['fetchHistoryUrlP2']}'
+    #url = f'https://www.pricerunner.se/se/api/search-compare-gateway/public/pricehistory/product/{product_id}/SE/DAY?merchantId=&selectedInterval=INFINITE_DAYS&filter=NATIONAL'
+
     response = requests.get(url).content
     data = json.loads(response)
     price_history = pd.DataFrame(data['history'])
