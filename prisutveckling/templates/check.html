@@ -5,9 +5,53 @@
 {% block content %}
     <h2 class="text-center">Price Prediction</h2>
     <div class="text-center mt-4">
-        <img src="{{ image_url }}" alt="Price Prediction Graph" class="img-fluid rounded">
+        <canvas id="priceChart" width="600" height="300"></canvas>
     </div>
     <div class="text-center mt-4">
         <a href="/" class="btn btn-secondary">Go back</a>
     </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        const historicalData = {{ historical_data | tojson }};
+        const predictedData = {{ predicted_data | tojson }};
+
+        const labels = historicalData.dates.concat(predictedData.dates);
+        const prices = historicalData.prices.concat(predictedData.prices);
+
+        // Create the chart
+        const ctx = document.getElementById('priceChart').getContext('2d');
+        const priceChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Price',
+                        data: prices,
+                        borderColor: 'orange',
+                        borderWidth: 2,
+                        fill: false,
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Date'
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Price'
+                        }
+                    }
+                }
+            }
+        });
+    </script>
 {% endblock %}

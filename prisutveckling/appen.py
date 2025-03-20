@@ -64,15 +64,17 @@ def aiPredict(price_history):
     # Generate dates for the next 30 days
     future_dates = pd.date_range(price_history['timestamp'].iloc[-1] + pd.Timedelta(days=1), periods=30)
 
-    # Plot the predicted prices
-    plt.figure(figsize=(10, 6))
-    plt.plot(price_history['timestamp'], price_history['price'], label='Historical Prices')
-    plt.plot(future_dates, future_prices, label='Predicted Prices', linestyle='--', color='orange')
-    plt.xlabel('Date')
-    plt.ylabel('Price')
-    plt.title('Next Month Price Prediction')
-    plt.legend()
-    plt.savefig('static/image.png')
+    # Prepare data for the frontend
+    historical_data = {
+        'dates': price_history['timestamp'].dt.strftime('%Y-%m-%d').tolist(),
+        'prices': price_history['price'].tolist()
+    }
+    predicted_data = {
+        'dates': future_dates.strftime('%Y-%m-%d').tolist(),
+        'prices': future_prices
+    }
+
+    return historical_data, predicted_data
 
 # Main page
 @app.route('/')
@@ -92,8 +94,8 @@ def search():
 def check():
     product_id = request.args.get('id')
     price_history = fetchPriceHistory(product_id)
-    aiPredict(price_history)
-    return render_template('check.html', image_url='/static/image.png')
+    historical_data, predicted_data = aiPredict(price_history)
+    return render_template('check.html', historical_data=historical_data, predicted_data=predicted_data)
 
 if __name__ == '__main__':
     app.run(debug=True)
