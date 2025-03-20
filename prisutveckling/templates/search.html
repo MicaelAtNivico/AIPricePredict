@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block title %}Search Results{% endblock %}
+
+{% block content %}
+    <h2 class="text-center">Search Results</h2>
+    <ul class="list-group mt-4">
+        {% for product in products %}
+            <li class="list-group-item bg-dark text-light">
+                <a href="/check?id={{ product.id }}" class="text-decoration-none text-info">
+                    {{ product.name }}
+                </a>
+            </li>
+        {% endfor %}
+    </ul>
+    <div class="text-center mt-4">
+        <a href="/" class="btn btn-secondary">Go back</a>
+    </div>
+{% endblock %}

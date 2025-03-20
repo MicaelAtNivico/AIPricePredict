@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+    <div class="text-center">
+        <h2>Search for a Product</h2>
+        <form action="/search" method="post" class="mt-4">
+            <div class="mb-3">
+                <input type="text" id="search" name="search" class="form-control" placeholder="Enter product name" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Search</button>
+        </form>
+    </div>
+{% endblock %}
