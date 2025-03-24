@@ -32,12 +32,26 @@ def fetchProduct(search_query):
 
 # Function to fetch product price history
 def fetchPriceHistory(product_id):
-    url = f'{settings[Country]['fetchHistoryUrlP1']}{product_id}{settings[Country]['fetchHistoryUrlP2']}'
+    url = f'{settings[Country]["fetchHistoryUrlP1"]}{product_id}{settings[Country]["fetchHistoryUrlP2"]}'
     #url = f'https://www.pricerunner.se/se/api/search-compare-gateway/public/pricehistory/product/{product_id}/SE/DAY?merchantId=&selectedInterval=INFINITE_DAYS&filter=NATIONAL'
 
     response = requests.get(url).content
     data = json.loads(response)
     price_history = pd.DataFrame(data['history'])
+
+    # Detect and handle outliers
+    Q1 = price_history['price'].quantile(0.25)
+    Q3 = price_history['price'].quantile(0.75)
+    IQR = Q3 - Q1
+    lower_bound = Q1 - 1.5 * IQR
+    upper_bound = Q3 + 1.5 * IQR
+
+    # Replace outliers with the median price
+    median_price = price_history['price'].median()
+    price_history['price'] = price_history['price'].apply(
+        lambda x: median_price if x < lower_bound or x > upper_bound else x
+    )
+
     return price_history
 
 # AI prediction function
