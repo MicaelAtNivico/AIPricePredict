@@ -173,10 +173,10 @@ def history_detail(history_id):
         # UTC
         latest_price_history['timestamp'] = pd.to_datetime(latest_price_history['timestamp'], errors='coerce', utc=True)
 
-        # Parse the saved predicted data
+        # saved predicted data
         predicted_data = json.loads(predicted_data)
 
-        # Prepare the latest historical data for the chart
+        # latest historical data for the chart
         latest_historical_data = {
             'dates': latest_price_history['timestamp'].dt.strftime('%Y-%m-%d').tolist(),
             'prices': latest_price_history['price'].tolist()
