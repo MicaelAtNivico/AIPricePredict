@@ -4,12 +4,26 @@
 
 {% block content %}
     <div class="text-center">
-        <h2>Search for a Product</h2>
-        <form action="/search" method="post" class="mt-4">
-            <div class="mb-3">
-                <input type="text" id="search" name="search" class="form-control" placeholder="Enter product name" required>
-            </div>
-            <button type="submit" class="btn btn-primary">Search</button>
-        </form>
+        <section class="search-form">
+            <h2>Search for a Product</h2>
+            <form action="/search" method="post" class="mt-4">
+                <div class="mb-3">
+                    <input type="text" id="search" name="search" class="form-control" placeholder="Enter product name" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Search</button>
+            </form>
+        </section>
     </div>
+    <section class="history-list">
+        <h2>Previous Searches</h2>
+        <ul>
+            {% for entry in history_entries %}
+            <li>
+                <a href="{{ url_for('history_detail', history_id=entry[0]) }}">
+                    {{ entry[1] }} ({{ entry[2] }})
+                </a>
+            </li>
+            {% endfor %}
+        </ul>
+    </section>
 {% endblock %}

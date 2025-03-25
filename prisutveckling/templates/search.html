@@ -7,7 +7,7 @@
     <ul class="list-group mt-4">
         {% for product in products %}
             <li class="list-group-item bg-dark text-light">
-                <a href="/check?id={{ product.id }}" class="text-decoration-none text-info">
+                <a href="{{ url_for('check', id=product.id, query=product.name) }}" class="text-decoration-none text-info">
                     {{ product.name }}
                 </a>
             </li>

@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template
+from flask import Flask, request, render_template, redirect, url_for
 import requests
 import json
 import pandas as pd
@@ -7,12 +7,14 @@ from sklearn.ensemble import RandomForestClassifier
 import numpy as np
 import matplotlib.pyplot as plt
 import os
+import sqlite3
+from datetime import datetime
 
 app = Flask(__name__)
 
 Country = 'Sweden'
 
-#reading the settings.json file
+# Reading the settings.json file
 settings = {}
 settings_path = os.path.join(os.path.dirname(__file__), 'settings.json')
 try:
@@ -22,10 +24,27 @@ except FileNotFoundError:
     print(f"Error: settings.json not found at {settings_path}")
     exit(1)
 
+# Initialize SQLite database
+db_path = os.path.join(os.path.dirname(__file__), 'history.db')
+conn = sqlite3.connect(db_path, check_same_thread=False)
+cursor = conn.cursor()
+
+# Create tables if they don't exist
+cursor.execute('''
+CREATE TABLE IF NOT EXISTS searches (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    search_query TEXT,
+    product_id TEXT,
+    fetched_data TEXT,
+    predicted_data TEXT,
+    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+)
+''')
+conn.commit()
+
 # Search function to fetch product data
 def fetchProduct(search_query):
-    url = f'{settings[Country]['fetchProductUrl']}{search_query}'
-    #url = f'https://www.pricerunner.se/se/api/search-compare-gateway/public/search/suggest/SE?q={search_query}'
+    url = f'{settings[Country]["fetchProductUrl"]}{search_query}'
     response = requests.get(url).content
     data = json.loads(response)
     return data
@@ -33,8 +52,6 @@ def fetchProduct(search_query):
 # Function to fetch product price history
 def fetchPriceHistory(product_id):
     url = f'{settings[Country]["fetchHistoryUrlP1"]}{product_id}{settings[Country]["fetchHistoryUrlP2"]}'
-    #url = f'https://www.pricerunner.se/se/api/search-compare-gateway/public/pricehistory/product/{product_id}/SE/DAY?merchantId=&selectedInterval=INFINITE_DAYS&filter=NATIONAL'
-
     response = requests.get(url).content
     data = json.loads(response)
     price_history = pd.DataFrame(data['history'])
@@ -80,6 +97,9 @@ def aiPredict(price_history):
     model = RandomForestClassifier(random_state=42)
     model.fit(X_train, y_train)
 
+    # Calculate AI accuracy
+    accuracy = model.score(X_test, y_test)
+
     # Predict future prices
     future_prices = []
     current_features = price_history.iloc[-1][features].values
@@ -94,7 +114,7 @@ def aiPredict(price_history):
     # Generate dates for the next 30 days
     future_dates = pd.date_range(price_history['timestamp'].iloc[-1] + pd.Timedelta(days=1), periods=30)
 
-    # Prepare data for the frontend
+    # Creating data for the frontend
     historical_data = {
         'dates': price_history['timestamp'].dt.strftime('%Y-%m-%d').tolist(),
         'prices': price_history['price'].tolist()
@@ -104,12 +124,14 @@ def aiPredict(price_history):
         'prices': future_prices
     }
 
-    return historical_data, predicted_data
+    return historical_data, predicted_data, accuracy
 
 # Main page
 @app.route('/')
 def index():
-    return render_template('index.html')
+    cursor.execute('SELECT id, search_query, timestamp FROM searches ORDER BY timestamp DESC')
+    history_entries = cursor.fetchall()
+    return render_template('index.html', history_entries=history_entries)
 
 # Search page
 @app.route('/search', methods=['POST'])
@@ -123,9 +145,30 @@ def search():
 @app.route('/check')
 def check():
     product_id = request.args.get('id')
+    search_query = request.args.get('query') 
     price_history = fetchPriceHistory(product_id)
-    historical_data, predicted_data = aiPredict(price_history)
-    return render_template('check.html', historical_data=historical_data, predicted_data=predicted_data)
+    historical_data, predicted_data, accuracy = aiPredict(price_history)
+
+    # Save to database
+    cursor.execute('''
+        INSERT INTO searches (search_query, product_id, fetched_data, predicted_data)
+        VALUES (?, ?, ?, ?)
+    ''', (search_query, product_id, json.dumps(historical_data), json.dumps(predicted_data)))
+    conn.commit()
+
+    return render_template('check.html', historical_data=historical_data, predicted_data=predicted_data, accuracy=accuracy)
+
+# Detailed history for old searches
+@app.route('/history/<int:history_id>')
+def history_detail(history_id):
+    cursor.execute('SELECT search_query, fetched_data, predicted_data FROM searches WHERE id = ?', (history_id,))
+    entry = cursor.fetchone()
+    if entry:
+        search_query, fetched_data, predicted_data = entry
+        return render_template('history_detail.html', search_query=search_query,
+                               fetched_data=json.loads(fetched_data), predicted_data=json.loads(predicted_data))
+    else:
+        return "History entry not found", 404
 
 if __name__ == '__main__':
     app.run(debug=True)
