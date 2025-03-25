@@ -14,7 +14,7 @@
         <main>
             <section class="chart-section">
                 <h2>Price Chart</h2>
-                <canvas id="priceChart" width="600" height="300"></canvas>
+                <canvas id="priceChart" width="800" height="400"></canvas>
             </section>
 
             <section class="navigation">
@@ -23,24 +23,24 @@
         </main>
 
         <script>
-            const historicalData = {{ fetched_data | tojson }};
+            const latestHistoricalData = {{ latest_historical_data | tojson }};
             const predictedData = {{ predicted_data | tojson }};
 
             const ctx = document.getElementById('priceChart').getContext('2d');
             const priceChart = new Chart(ctx, {
                 type: 'line',
                 data: {
-                    labels: historicalData.dates.concat(predictedData.dates),
+                    labels: latestHistoricalData.dates.concat(predictedData.dates),
                     datasets: [
                         {
-                            label: 'Historical Prices',
-                            data: historicalData.prices,
+                            label: 'Actual Prices',
+                            data: latestHistoricalData.prices,
                             borderColor: 'blue',
                             fill: false
                         },
                         {
                             label: 'Predicted Prices',
-                            data: Array(historicalData.prices.length).fill(null).concat(predictedData.prices),
+                            data: Array(latestHistoricalData.prices.length).fill(null).concat(predictedData.prices),
                             borderColor: 'red',
                             borderDash: [5, 5],
                             fill: false

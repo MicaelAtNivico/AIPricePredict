@@ -161,12 +161,33 @@ def check():
 # Detailed history for old searches
 @app.route('/history/<int:history_id>')
 def history_detail(history_id):
-    cursor.execute('SELECT search_query, fetched_data, predicted_data FROM searches WHERE id = ?', (history_id,))
+    # Fetch the saved data from the database
+    cursor.execute('SELECT search_query, product_id, fetched_data, predicted_data FROM searches WHERE id = ?', (history_id,))
     entry = cursor.fetchone()
     if entry:
-        search_query, fetched_data, predicted_data = entry
-        return render_template('history_detail.html', search_query=search_query,
-                               fetched_data=json.loads(fetched_data), predicted_data=json.loads(predicted_data))
+        search_query, product_id, fetched_data, predicted_data = entry
+
+        # Fetch the latest price history from PriceRunner
+        latest_price_history = fetchPriceHistory(product_id)
+
+        # UTC
+        latest_price_history['timestamp'] = pd.to_datetime(latest_price_history['timestamp'], errors='coerce', utc=True)
+
+        # Parse the saved predicted data
+        predicted_data = json.loads(predicted_data)
+
+        # Prepare the latest historical data for the chart
+        latest_historical_data = {
+            'dates': latest_price_history['timestamp'].dt.strftime('%Y-%m-%d').tolist(),
+            'prices': latest_price_history['price'].tolist()
+        }
+
+        return render_template(
+            'history_detail.html',
+            search_query=search_query,
+            latest_historical_data=latest_historical_data,
+            predicted_data=predicted_data
+        )
     else:
         return "History entry not found", 404
 
